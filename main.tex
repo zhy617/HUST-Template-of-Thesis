@@ -1,0 +1,45 @@
+\documentclass[thesis,biblatex]{template/hust}
+
+\addbibresource{ref.bib}
+\usepackage{macros}
+\usepackage{booktabs}
+
+\title{这是标题这是标题这是标题}
+
+\author{小岳岳}
+\school{计算机科学与技术}
+\classnum{计科 2201}
+\stunum{U202215102}
+\instructor{郭德纲}
+\date{2026年5月7日}
+
+
+% 毕业论文模板
+\begin{document}
+    \maketitle                              % 封面
+    % 封面后插入一页真正的空白页（无页眉页脚）
+    \clearpage
+    \thispagestyle{empty}
+    \null
+    \clearpage
+    \authorization                          % 原创页（不保密）
+    % \authorization[x]                     % 原创页（保密 x 年）
+    
+    \pagenumbering{Roman}
+    \include{body/abstract-ch}              % 中文摘要
+    \include{body/abstract-en}              % 英文摘要
+    \tableofcontents                        % 目录
+    \newpage
+    \pagenumbering{arabic}
+    \include{body/introduction}                 % 正文
+    \include{body/related_works}
+    \include{body/method}
+    \include{body/experiments}
+    \include{body/conclusion}
+    
+    \include{body/acknowledgement}          % 致谢
+    \include{body/references}               % 参考文献
+    % \appendix                               % 附录
+    % \include{body/appendices}
+
+\end{document}
