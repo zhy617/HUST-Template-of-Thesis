@@ -83,6 +83,207 @@
       \range{pages}{1}
       \keyw{张立先2011数控机床高速微线段插补算法与自适应前瞻处理}
     \endentry
+    \entry{liu2023llava}{inproceedings}{}{}
+      \name{author}{4}{}{%
+        {{hash=a580d4b27cb901a9aa355d400bd9c16e}{%
+           family={Liu},
+           familyi={L\bibinitperiod},
+           given={Haotian},
+           giveni={H\bibinitperiod}}}%
+        {{hash=307cd2ff14b0ecd5a0ae2ca42e7c71b2}{%
+           family={Li},
+           familyi={L\bibinitperiod},
+           given={Chunyuan},
+           giveni={C\bibinitperiod}}}%
+        {{hash=8b8f0b5eb82125a35828b30dbefc78ef}{%
+           family={Wu},
+           familyi={W\bibinitperiod},
+           given={Qingyang},
+           giveni={Q\bibinitperiod}}}%
+        {{hash=0058780d2044b7ad95d263c45e1a1b15}{%
+           family={Lee},
+           familyi={L\bibinitperiod},
+           given={Yong\bibnamedelima Jae},
+           giveni={Y\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+      }
+      \name{editor}{6}{}{%
+        {{hash=6d9c5f3daf57997af27b3617ec7d1fe9}{%
+           family={Oh},
+           familyi={O\bibinitperiod},
+           given={A.},
+           giveni={A\bibinitperiod}}}%
+        {{hash=85bc7cefdd5554b76135cee4b8e4ce02}{%
+           family={Naumann},
+           familyi={N\bibinitperiod},
+           given={T.},
+           giveni={T\bibinitperiod}}}%
+        {{hash=fbc410321d4ef88338a144a263d84a52}{%
+           family={Globerson},
+           familyi={G\bibinitperiod},
+           given={A.},
+           giveni={A\bibinitperiod}}}%
+        {{hash=b4c13335066154b96f9f6b69c52f1c34}{%
+           family={Saenko},
+           familyi={S\bibinitperiod},
+           given={K.},
+           giveni={K\bibinitperiod}}}%
+        {{hash=d5244a9be1ca0eac9110d23de0146408}{%
+           family={Hardt},
+           familyi={H\bibinitperiod},
+           given={M.},
+           giveni={M\bibinitperiod}}}%
+        {{hash=3cd8fe4b36223cabb80a65d5bca613b3}{%
+           family={Levine},
+           familyi={L\bibinitperiod},
+           given={S.},
+           giveni={S\bibinitperiod}}}%
+      }
+      \name{namea}{4}{}{%
+        {{hash=a580d4b27cb901a9aa355d400bd9c16e}{%
+           family={Liu},
+           familyi={L\bibinitperiod},
+           given={Haotian},
+           giveni={H\bibinitperiod}}}%
+        {{hash=307cd2ff14b0ecd5a0ae2ca42e7c71b2}{%
+           family={Li},
+           familyi={L\bibinitperiod},
+           given={Chunyuan},
+           giveni={C\bibinitperiod}}}%
+        {{hash=8b8f0b5eb82125a35828b30dbefc78ef}{%
+           family={Wu},
+           familyi={W\bibinitperiod},
+           given={Qingyang},
+           giveni={Q\bibinitperiod}}}%
+        {{hash=0058780d2044b7ad95d263c45e1a1b15}{%
+           family={Lee},
+           familyi={L\bibinitperiod},
+           given={Yong\bibnamedelima Jae},
+           giveni={Y\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+      }
+      \list{language}{1}{%
+        {english}%
+      }
+      \list{publisher}{1}{%
+        {Curran Associates, Inc.}%
+      }
+      \strng{namehash}{5210b7379e6d782545413890e930fb8d}
+      \strng{fullhash}{6db541ecf0741fe14b8b2a6452dc056f}
+      \strng{fullhashraw}{6db541ecf0741fe14b8b2a6452dc056f}
+      \strng{bibnamehash}{6b0e73f343ba6f3276a7299005bf324e}
+      \strng{authorbibnamehash}{6b0e73f343ba6f3276a7299005bf324e}
+      \strng{authornamehash}{5210b7379e6d782545413890e930fb8d}
+      \strng{authorfullhash}{6db541ecf0741fe14b8b2a6452dc056f}
+      \strng{authorfullhashraw}{6db541ecf0741fe14b8b2a6452dc056f}
+      \strng{editorbibnamehash}{12307d0f1d6230fcc2ad01b24f51815f}
+      \strng{editornamehash}{cdfb36351492c4e843cfb87a8549b3ef}
+      \strng{editorfullhash}{c4805185ea5603cbf8bdc85fe57d1ec3}
+      \strng{editorfullhashraw}{c4805185ea5603cbf8bdc85fe57d1ec3}
+      \strng{nameabibnamehash}{6b0e73f343ba6f3276a7299005bf324e}
+      \strng{nameanamehash}{5210b7379e6d782545413890e930fb8d}
+      \strng{nameafullhash}{6db541ecf0741fe14b8b2a6452dc056f}
+      \strng{nameafullhashraw}{6db541ecf0741fe14b8b2a6452dc056f}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Advances in Neural Information Processing Systems}
+      \field{langid}{english}
+      \field{languageid}{english}
+      \field{lansortorder}{4}
+      \field{title}{Visual Instruction Tuning}
+      \field{usera}{C}
+      \field{userc}{english}
+      \field{userd}{english}
+      \field{userf}{english}
+      \field{volume}{36}
+      \field{year}{2023}
+      \field{dateera}{ce}
+      \field{pages}{34892\bibrangedash 34916}
+      \range{pages}{25}
+      \verb{urlraw}
+      \verb https://proceedings.neurips.cc/paper_files/paper/2023/file/6dcf277ea32ce3288914faf369fe6de0-Paper-Conference.pdf
+      \endverb
+      \verb{url}
+      \verb https://proceedings.neurips.cc/paper_files/paper/2023/file/6dcf277ea32ce3288914faf369fe6de0-Paper-Conference.pdf
+      \endverb
+      \keyw{liu2023llava}
+    \endentry
+    \entry{fedus2022switch}{article}{}{}
+      \name{author}{3}{}{%
+        {{hash=749d4fb83777d7b74c0ee8de5a510f41}{%
+           family={Fedus},
+           familyi={F\bibinitperiod},
+           given={William},
+           giveni={W\bibinitperiod}}}%
+        {{hash=91aafc93e68e8c6a55e8cd804c2acaf2}{%
+           family={Zoph},
+           familyi={Z\bibinitperiod},
+           given={Barret},
+           giveni={B\bibinitperiod}}}%
+        {{hash=62efade83d70f0323fe248755e6c90c5}{%
+           family={Shazeer},
+           familyi={S\bibinitperiod},
+           given={Noam},
+           giveni={N\bibinitperiod}}}%
+      }
+      \name{namea}{3}{}{%
+        {{hash=749d4fb83777d7b74c0ee8de5a510f41}{%
+           family={Fedus},
+           familyi={F\bibinitperiod},
+           given={William},
+           giveni={W\bibinitperiod}}}%
+        {{hash=91aafc93e68e8c6a55e8cd804c2acaf2}{%
+           family={Zoph},
+           familyi={Z\bibinitperiod},
+           given={Barret},
+           giveni={B\bibinitperiod}}}%
+        {{hash=62efade83d70f0323fe248755e6c90c5}{%
+           family={Shazeer},
+           familyi={S\bibinitperiod},
+           given={Noam},
+           giveni={N\bibinitperiod}}}%
+      }
+      \list{language}{1}{%
+        {english}%
+      }
+      \strng{namehash}{27fc098359173279b89e523ea4cb07c6}
+      \strng{fullhash}{3a4d4f3ef7220737c921ca534c5e4379}
+      \strng{fullhashraw}{3a4d4f3ef7220737c921ca534c5e4379}
+      \strng{bibnamehash}{3a4d4f3ef7220737c921ca534c5e4379}
+      \strng{authorbibnamehash}{3a4d4f3ef7220737c921ca534c5e4379}
+      \strng{authornamehash}{27fc098359173279b89e523ea4cb07c6}
+      \strng{authorfullhash}{3a4d4f3ef7220737c921ca534c5e4379}
+      \strng{authorfullhashraw}{3a4d4f3ef7220737c921ca534c5e4379}
+      \strng{nameabibnamehash}{3a4d4f3ef7220737c921ca534c5e4379}
+      \strng{nameanamehash}{27fc098359173279b89e523ea4cb07c6}
+      \strng{nameafullhash}{3a4d4f3ef7220737c921ca534c5e4379}
+      \strng{nameafullhashraw}{3a4d4f3ef7220737c921ca534c5e4379}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Journal of Machine Learning Research}
+      \field{langid}{english}
+      \field{languageid}{english}
+      \field{lansortorder}{4}
+      \field{number}{120}
+      \field{title}{Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity}
+      \field{usera}{J}
+      \field{userd}{english}
+      \field{userf}{english}
+      \field{volume}{23}
+      \field{year}{2022}
+      \field{dateera}{ce}
+      \field{pages}{1\bibrangedash 39}
+      \range{pages}{39}
+      \verb{urlraw}
+      \verb http://jmlr.org/papers/v23/21-0998.html
+      \endverb
+      \verb{url}
+      \verb http://jmlr.org/papers/v23/21-0998.html
+      \endverb
+      \keyw{fedus2022switch}
+    \endentry
   \enddatalist
 \endrefsection
 \endinput

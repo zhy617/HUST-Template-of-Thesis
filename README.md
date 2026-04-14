@@ -150,3 +150,86 @@ git config pull.rebase false
 
 这样做能显著降低上游模板更新时的冲突概率。
 
+## 参考文献格式（按学校要求）
+
+本模板默认使用 `biblatex + gb7714-2015`，并已调整为：
+
+1. 作者姓名按“姓在前，名在后”。
+2. 参考文献作者超过 3 人时，仅显示前 3 人并自动加“等”（英文文献为 `et al`）。
+3. 关闭文献类型标识（如 `[J]`、`[M]`）显示，使输出更贴近学院给出的示例格式。
+
+请在 `ref.bib` 中按下列字段填写（缺失字段会导致该项无法完整显示）。
+
+### 1. 图书
+
+```bibtex
+@book{key,
+  author    = {张三 and 李四 and 王五 and 赵六},
+  title     = {书名},
+  edition   = {2},
+  translator= {某某},
+  location  = {北京},
+  publisher = {某出版社},
+  year      = {2024},
+  pages     = {1-20}
+}
+```
+
+### 2. 期刊
+
+```bibtex
+@article{key,
+  author       = {张三 and 李四 and 王五 and 赵六},
+  title        = {文章名称},
+  journaltitle = {期刊名称},
+  year         = {2024},
+  volume       = {10},
+  number       = {2},
+  pages        = {100-120}
+}
+```
+
+### 3. 会议论文集
+
+```bibtex
+@inproceedings{key,
+  author    = {张三 and 李四 and 王五 and 赵六},
+  title     = {文章名称},
+  editor    = {主编甲 and 主编乙},
+  booktitle = {论文集名},
+  location  = {武汉},
+  publisher = {某出版社},
+  year      = {2024},
+  pages     = {50-60}
+}
+```
+
+### 4. 专利
+
+```bibtex
+@patent{key,
+  author = {专利申请者},
+  title  = {专利题名},
+  number = {CN123456789A},
+  year   = {2024},
+  pages  = {1-3}
+}
+```
+
+说明：`number` 中可按“国别 + 专利文献种类 + 专利号”填写。
+
+### 5. 学位论文
+
+```bibtex
+@thesis{key,
+  author      = {作者},
+  title       = {题名},
+  type        = {博士学位论文},
+  institution = {华中科技大学图书馆},
+  location    = {武汉},
+  year        = {2024}
+}
+```
+
+说明：硕士论文将 `type` 改为 `硕士学位论文`。
+

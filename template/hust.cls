@@ -358,7 +358,16 @@
 
 %================== 参考文献 ==================%
 \ifdefined\HGP@biblatex
-    \RequirePackage[sorting=none]{biblatex}
+    \ExecuteBibliographyOptions{
+        sorting=none,
+        maxbibnames=3,
+        minbibnames=3,
+        gbnamefmt=familyahead,
+        gbfieldtype=false,
+        url=false,
+        doi=false,
+        eprint=false
+    }
     \newcommand{\references}{
         \printbibliography[heading=bibintoc,title=参考文献]
         \ifdefstring{\HGP@mode}{thesis}{\clearpage}{}
