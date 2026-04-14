@@ -9,7 +9,7 @@
 *.gz
 *.fdb_latexmk
 *.synctex.gz
-*.syntex(busy)
+*.synctex(busy)
 *.pdf
 
 .vscode/
