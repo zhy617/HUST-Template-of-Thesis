@@ -10,13 +10,24 @@
 论文中不允许出现“我”、“我们”、“本文”之类的词，可以用“本课题”或者“本研究”，甚至可以直接用无主句。
 
 \subsubsection{研究背景与趋势}
-\begin{enumerate}
+\begin{list}{（\arabic{enumi}）}{
+  \setlength{\leftmargin}{0pt}
+  \settowidth{\labelwidth}{（1）}
+  \setlength{\labelsep}{0pt}
+  \setlength{\itemindent}{\dimexpr\parindent+\labelwidth\relax}
+  \setlength{\itemsep}{\parskip}
+  \setlength{\parsep}{0pt}
+  \setlength{\topsep}{0pt}
+  \setlength{\partopsep}{0pt}
+  \usecounter{enumi}
+}
+\setlength{\parindent}{\originalparindent}
     \item 参考文献必须全部在论文正文中按顺序引用
     \item 不得在标题处进行引用，引用出现在标点之前。
     \item 可以在引用处右上角加标注进行引用，也可以直接在正文中用“文献[3]指出……”这样的话语进行引用
     \item 参考文献在后面的【参考文献】中排列顺序按照在论文中第一次引用的先后顺序排列
     \item 多篇参考文献群引不超过3篇，可使用如下风格:[1,2,3]、[1][2][3]
-\end{enumerate}
+\end{list}
 
 \subsubsection{面临的问题和挑战}
 

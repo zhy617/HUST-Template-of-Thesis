@@ -80,7 +80,7 @@ try {
       $doc.Close($false)
     }
     finally {
-      $word.Quit()
+      try { $word.Quit() } catch {}
     }
   }
 

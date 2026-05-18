@@ -170,10 +170,13 @@
 
 % 图表标题格式
 \DeclareCaptionFont{hust}{\heiti\zihao{-4}}
+\DeclareCaptionFont{husttable}{\heiti\zihao{5}}
+\DeclareCaptionFont{hustalgorithm}{\zihao{5}}
 \captionsetup{labelsep=quad}
 \captionsetup{font=hust}
 \captionsetup[figure]{position=bottom,skip={6pt}}
-\captionsetup[table]{position=top,skip={0pt}}
+\captionsetup[table]{font=husttable,position=top,skip={0pt}}
+\captionsetup[algorithm]{font=hustalgorithm,labelfont=bf,labelsep=space,justification=raggedright,singlelinecheck=false,position=top,skip={0pt}}
 \setlength{\belowcaptionskip}{0pt}
 \setlength{\intextsep}{0pt plus 2pt}
 \AtBeginEnvironment{table}{\vspace{0.5\baselineskip}}
@@ -357,15 +360,16 @@
 
 
 %==================== 代码格式 ====================%
+\definecolor{shadecolor}{gray}{0.88}
 \DefineVerbatimEnvironment{cppcode}{Verbatim}{
-    frame=lines,
     framesep=4pt,
-    fontsize=\footnotesize
+    fontsize=\fontsize{11pt}{13.2pt}\selectfont,
+    fontshape=it
 }
 \DefineVerbatimEnvironment{pythoncode}{Verbatim}{
-    frame=lines,
     framesep=4pt,
-    fontsize=\footnotesize
+    fontsize=\fontsize{11pt}{13.2pt}\selectfont,
+    fontshape=it
 }
 
 %================== tikz & plots ==================%
@@ -389,12 +393,17 @@
 
 
 %====================== 算法 ======================%
+\floatstyle{ruled}
+\restylefloat{algorithm}
 \floatname{algorithm}{算法}
-\renewcommand{\algorithmicrequire}{\textbf{Input: }}
-\renewcommand{\algorithmicensure}{\textbf{Output: }}
+\renewcommand{\algorithmicrequire}{\textbf{输入：}}
+\renewcommand{\algorithmicensure}{\textbf{输出：}}
+\algrenewcommand\algorithmicindent{1.5em}
+\algrenewcommand\alglinenumber[1]{\zihao{5}#1:}
 
-\AtBeginEnvironment{algorithmic}{\vspace{3pt}\setstretch{1.3}}
-\AtEndEnvironment{algorithmic}{\vspace{3pt}}
+\AtBeginEnvironment{algorithm}{\zihao{5}}
+\AtBeginEnvironment{algorithmic}{\vspace{1pt}\zihao{5}\setstretch{1.0}}
+\AtEndEnvironment{algorithmic}{\vspace{1pt}}
 
 
 %================== 参考文献 ==================%

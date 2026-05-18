@@ -29,6 +29,8 @@ TEXT_RE = re.compile(r"<w:t\b[^>]*>(.*?)</w:t>", re.S)
 RUN_RE = re.compile(r"(<w:r\b[^>]*>)(.*?)(</w:r>)", re.S)
 EQUATION_SPACING = '<w:spacing w:before="180" w:after="180" w:line="240" w:lineRule="auto"/>'
 BODY_SIZE = '<w:sz w:val="24"/><w:szCs w:val="24"/>'
+TABLE_SIZE = '<w:sz w:val="21"/><w:szCs w:val="21"/>'
+ALGORITHM_SIZE = '<w:sz w:val="22"/><w:szCs w:val="22"/>'
 CROSSREF_STYLE = '<w:color w:val="000000"/><w:u w:val="none"/>'
 EQUATION_INDENT = '<w:ind w:firstLine="0" w:firstLineChars="0" w:left="0" w:right="0"/>'
 EQUATION_TABS = '<w:tabs><w:tab w:val="center" w:pos="4145"/><w:tab w:val="right" w:pos="8290"/></w:tabs>'
@@ -36,6 +38,9 @@ INLINE_MATH_SPACE = '<w:r><w:t xml:space="preserve"> </w:t></w:r>'
 INLINE_MATH_INNER_SPACE = '<m:r><m:t xml:space="preserve"> </m:t></m:r>'
 TABLE_PARAGRAPH_INDENT = '<w:ind w:firstLine="0" w:firstLineChars="0" w:left="0" w:right="0"/>'
 TABLE_RUN_FONTS = '<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="宋体" w:cs="Times New Roman"/>'
+CUSTOM_LIST_RUN_FONTS = '<w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体" w:cs="宋体" w:hint="eastAsia"/>'
+CIRCLED_NUMBER_FONTS = CUSTOM_LIST_RUN_FONTS
+CIRCLED_NUMBER_RE = re.compile(r"[\u2460-\u2473]")
 
 
 def paragraph_text(xml: str) -> str:
@@ -127,29 +132,29 @@ def patch_inline_math_spacing(inner: str) -> str:
     return "".join(out)
 
 
-def patch_rpr_body_size(rpr_xml: str) -> str:
+def patch_rpr_size(rpr_xml: str, size_xml: str) -> str:
     match = RPR_RE.fullmatch(rpr_xml)
     if not match:
         return rpr_xml
     body = SIZE_RE.sub("", match.group(2))
-    return f"{match.group(1)}{body}{BODY_SIZE}{match.group(3)}"
+    return f"{match.group(1)}{body}{size_xml}{match.group(3)}"
 
 
-def patch_caption_body_size(inner: str) -> str:
+def patch_caption_body_size(inner: str, size_xml: str = BODY_SIZE) -> str:
     ppr_match = PPR_RE.search(inner)
     if ppr_match:
         ppr_body = ppr_match.group(2)
         rpr_match = RPR_RE.search(ppr_body)
         if rpr_match:
-            patched_rpr = patch_rpr_body_size(rpr_match.group(0))
+            patched_rpr = patch_rpr_size(rpr_match.group(0), size_xml)
             ppr_body = ppr_body[: rpr_match.start()] + patched_rpr + ppr_body[rpr_match.end() :]
         else:
-            ppr_body = f"{ppr_body}<w:rPr>{BODY_SIZE}</w:rPr>"
+            ppr_body = f"{ppr_body}<w:rPr>{size_xml}</w:rPr>"
         patched_ppr = f"{ppr_match.group(1)}{ppr_body}{ppr_match.group(3)}"
         inner = inner[: ppr_match.start()] + patched_ppr + inner[ppr_match.end() :]
     else:
-        inner = f"<w:pPr><w:rPr>{BODY_SIZE}</w:rPr></w:pPr>{inner}"
-    return RPR_RE.sub(lambda m: patch_rpr_body_size(m.group(0)), inner)
+        inner = f"<w:pPr><w:rPr>{size_xml}</w:rPr></w:pPr>{inner}"
+    return RPR_RE.sub(lambda m: patch_rpr_size(m.group(0), size_xml), inner)
 
 
 def patch_citation_hyperlink_superscript(xml: str) -> str:
@@ -261,11 +266,14 @@ def patch_table_paragraph_indents(xml: str) -> str:
 
 def patch_table_run_fonts(xml: str) -> str:
     def patch_run(match: re.Match[str]) -> str:
+        return patch_run_with_default(match, "21")
+
+    def patch_run_with_default(match: re.Match[str], default_size: str) -> str:
         start, inner, end = match.groups()
         if "<w:drawing" in inner:
             return match.group(0)
         size_match = re.search(r'<w:sz\b[^>]*\bw:val="(\d+)"[^>]*/>', inner)
-        size_val = size_match.group(1) if size_match else "21"
+        size_val = size_match.group(1) if size_match else default_size
         size_xml = f'<w:sz w:val="{size_val}"/><w:szCs w:val="{size_val}"/>'
         rpr_match = RPR_RE.search(inner)
         if rpr_match:
@@ -279,7 +287,10 @@ def patch_table_run_fonts(xml: str) -> str:
         return f"{start}{inner}{end}"
 
     def patch_table(match: re.Match[str]) -> str:
-        return RUN_RE.sub(patch_run, match.group(0))
+        table = match.group(0)
+        table_text = unescape("".join(TEXT_RE.findall(table)))
+        default_size = "22" if re.search(r"算法\s+\d+-\d+\s+\S", table_text) else "21"
+        return RUN_RE.sub(lambda run_match: patch_run_with_default(run_match, default_size), table)
 
     return re.sub(r"<w:tbl\b.*?</w:tbl>", patch_table, xml, flags=re.S)
 
@@ -297,6 +308,49 @@ def patch_body_tables_only(xml: str) -> str:
     return prefix + suffix
 
 
+def patch_circled_number_fonts(xml: str) -> str:
+    def patch_run(match: re.Match[str]) -> str:
+        start, inner, end = match.groups()
+        visible_text = unescape("".join(TEXT_RE.findall(inner)))
+        if not CIRCLED_NUMBER_RE.search(visible_text):
+            return match.group(0)
+
+        rpr_match = RPR_RE.search(inner)
+        if rpr_match:
+            body = re.sub(r"<w:rFonts\b[^>]*/>", "", rpr_match.group(2))
+            patched = f"{rpr_match.group(1)}{CIRCLED_NUMBER_FONTS}{body}{rpr_match.group(3)}"
+            inner = inner[: rpr_match.start()] + patched + inner[rpr_match.end() :]
+        else:
+            inner = f"<w:rPr>{CIRCLED_NUMBER_FONTS}</w:rPr>{inner}"
+        return f"{start}{inner}{end}"
+
+    return RUN_RE.sub(patch_run, xml)
+
+
+def patch_custom_list_fonts(xml: str) -> str:
+    def patch_run(run_match: re.Match[str]) -> str:
+        start, inner, end = run_match.groups()
+        rpr_match = RPR_RE.search(inner)
+        if rpr_match:
+            body = re.sub(r"<w:rFonts\b[^>]*/>", "", rpr_match.group(2))
+            body = re.sub(r"<w:b(?:Cs)?\b[^>]*/>", "", body)
+            patched = f"{rpr_match.group(1)}{CUSTOM_LIST_RUN_FONTS}{body}{rpr_match.group(3)}"
+            inner = inner[: rpr_match.start()] + patched + inner[rpr_match.end() :]
+        else:
+            inner = f"<w:rPr>{CUSTOM_LIST_RUN_FONTS}</w:rPr>{inner}"
+        return f"{start}{inner}{end}"
+
+    def patch_para(match: re.Match[str]) -> str:
+        start, inner, end = match.groups()
+        text = paragraph_text(inner).replace(" ", "")
+        if not re.match(r"^(?:[（(]\d+[）)]|[\u2460-\u2473]|[A-Z]三级列表)", text):
+            return match.group(0)
+        inner = RUN_RE.sub(patch_run, inner)
+        return f"{start}{inner}{end}"
+
+    return PARA_RE.sub(patch_para, xml)
+
+
 def patch_document_xml(data: bytes) -> bytes:
     text = data.decode("utf-8")
 
@@ -304,8 +358,12 @@ def patch_document_xml(data: bytes) -> bytes:
         start, inner, end = match.groups()
         if has_math(inner) and re.search(r"\(\d+-\d+\)\s*$", paragraph_text(inner)):
             inner = patch_equation_layout(inner)
-        elif re.match(r"(?:[表图]|算法)\s+\d+-\d+\s+\S", paragraph_text(inner)):
-            inner = patch_caption_body_size(inner)
+        elif re.match(r"表\s+\d+-\d+\s+\S", paragraph_text(inner)):
+            inner = patch_caption_body_size(inner, TABLE_SIZE)
+        elif re.match(r"算法\s+\d+-\d+\s+\S", paragraph_text(inner)):
+            inner = patch_caption_body_size(inner, ALGORITHM_SIZE)
+        elif re.match(r"图\s+\d+-\d+\s+\S", paragraph_text(inner)):
+            inner = patch_caption_body_size(inner, BODY_SIZE)
         elif has_math(inner):
             inner = patch_inline_math_spacing(inner)
         return f"{start}{inner}{end}"
@@ -315,11 +373,17 @@ def patch_document_xml(data: bytes) -> bytes:
     text = patch_citation_hyperlink_superscript(text)
     text = patch_reference_external_hyperlink_style(text)
     text = patch_body_tables_only(text)
+    text = patch_circled_number_fonts(text)
+    text = patch_custom_list_fonts(text)
     return text.encode("utf-8")
 
 
 def patch_settings_xml(data: bytes) -> bytes:
     text = data.decode("utf-8")
+    if "<w:updateFields" in text:
+        text = re.sub(r"<w:updateFields\b[^/]*/>", '<w:updateFields w:val="false"/>', text)
+    else:
+        text = text.replace("</w:settings>", '<w:updateFields w:val="false"/></w:settings>')
     if "<w:autoHyphenation" in text:
         text = re.sub(r"<w:autoHyphenation\b[^/]*/>", '<w:autoHyphenation w:val="false"/>', text)
     else:

@@ -262,6 +262,7 @@ def make_caption_paragraph(original_p: str, prefix: str, number: str, title: str
     bookmarks = "".join(re.findall(r"<w:bookmark(?:Start|End)\b[^>]*/>", original_p))
     text = escape(f"{prefix} {number} {title}")
     keep_xml = "<w:keepNext/>" if keep_next else ""
+    size_val = "21" if prefix == "表" else "24"
     ppr = (
         f"<w:pPr>{keep_xml}"
         '<w:spacing w:before="30" w:after="30" w:line="240" w:lineRule="auto"/>'
@@ -269,13 +270,13 @@ def make_caption_paragraph(original_p: str, prefix: str, number: str, title: str
         '<w:jc w:val="center"/>'
         '<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" '
         'w:eastAsia="宋体" w:cs="Times New Roman"/>'
-        '<w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>'
+        f'<w:b/><w:bCs/><w:sz w:val="{size_val}"/><w:szCs w:val="{size_val}"/></w:rPr>'
         '</w:pPr>'
     )
     rpr = (
         '<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" '
         'w:eastAsia="宋体" w:cs="Times New Roman"/>'
-        '<w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>'
+        f'<w:b/><w:bCs/><w:sz w:val="{size_val}"/><w:szCs w:val="{size_val}"/></w:rPr>'
     )
     return f'{p_open}{ppr}{bookmarks}<w:r>{rpr}<w:t>{text}</w:t></w:r></w:p>'
 
@@ -310,14 +311,14 @@ def make_border(tag: str, val: str, sz: str = "0", color: str = TABLE_RULE_COLOR
     return el
 
 
-def add_table_borders(tbl_pr: ET.Element) -> None:
+def add_table_borders(tbl_pr: ET.Element, *, fragment_bottom_rule: bool = False) -> None:
     remove_children(tbl_pr, w("tblBorders"))
     borders = ET.Element(w("tblBorders"))
     borders.extend(
         [
             make_border("top", "none", "0"),
             make_border("left", "none", "0"),
-            make_border("bottom", "none", "0"),
+            make_border("bottom", "single" if fragment_bottom_rule else "none", "12" if fragment_bottom_rule else "0"),
             make_border("right", "none", "0"),
             make_border("insideH", "none", "0"),
             make_border("insideV", "none", "0"),
@@ -777,7 +778,8 @@ def style_table_xml(
         caption = ET.Element(w("tblCaption"))
         tbl_pr.append(caption)
     caption.set(w("val"), f"表 {table_number} {title}")
-    add_table_borders(tbl_pr)
+    fragment_bottom_rule = max_cols >= 7 and len(rows) > 4
+    add_table_borders(tbl_pr, fragment_bottom_rule=fragment_bottom_rule)
     add_table_cell_margins(tbl_pr, compact=max_cols >= 7)
     if widths:
         no_wrap_columns = {0} if max_cols == 4 else set()
@@ -808,7 +810,7 @@ def style_table_xml(
                 cell,
                 top_rule=(row_index == 0),
                 header_rule=(row_index == header_rows - 1),
-                bottom_rule=(row_index == len(rows) - 1),
+                bottom_rule=(row_index == len(rows) - 1 and not fragment_bottom_rule),
             )
             alignment = table_column_alignment(alignments, cell_index, text, row_index < header_rows)
             for p in cell.findall(w("p")):
@@ -889,11 +891,107 @@ def update_algorithm_crossrefs(body_xml: str, label_to_number: dict[str, str]) -
 
         def repl(match: re.Match[str]) -> str:
             rpr = normal_crossref_rpr()
-            return f"{match.group(1)}<w:r>{rpr}<w:t>{number}</w:t></w:r>{match.group(3)}"
+            return f"<w:r>{rpr}<w:t>{number}</w:t></w:r>"
 
         body_xml = pattern.sub(repl, body_xml)
         body_xml = body_xml.replace(f"[{label}]", number)
     return body_xml
+
+
+def source_code_blocks(root: Path) -> list[list[str]]:
+    blocks: list[list[str]] = []
+    pattern = re.compile(r"\\begin\{(?:cppcode|pythoncode)\}(.*?)\\end\{(?:cppcode|pythoncode)\}", re.S)
+    for path in word_input_files(root):
+        text = path.read_text(encoding="utf-8")
+        for match in pattern.finditer(text):
+            lines = match.group(1).splitlines()
+            while lines and not lines[0].strip():
+                lines.pop(0)
+            while lines and not lines[-1].strip():
+                lines.pop()
+            if lines:
+                blocks.append(lines)
+    return blocks
+
+
+def make_code_line_paragraph(line: str) -> str:
+    code_size = "22"
+    ppr = (
+        '<w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/>'
+        '<w:ind w:firstLine="0" w:firstLineChars="0" w:left="0" w:right="0"/>'
+        '<w:jc w:val="left"/>'
+        '<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" '
+        'w:eastAsia="宋体" w:cs="Times New Roman"/><w:i/><w:iCs/>'
+        f'<w:sz w:val="{code_size}"/><w:szCs w:val="{code_size}"/></w:rPr>'
+        '</w:pPr>'
+    )
+    rpr = (
+        '<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" '
+        'w:eastAsia="宋体" w:cs="Times New Roman"/><w:i/><w:iCs/>'
+        f'<w:sz w:val="{code_size}"/><w:szCs w:val="{code_size}"/></w:rPr>'
+    )
+    return f'<w:p>{ppr}<w:r>{rpr}<w:t xml:space="preserve">{escape(line)}</w:t></w:r></w:p>'
+
+
+def make_code_block_table(lines: list[str]) -> str:
+    paragraphs = "".join(make_code_line_paragraph(line.replace("\t", "    ")) for line in lines)
+    return (
+        '<w:tbl><w:tblPr>'
+        '<w:tblW w:w="8312" w:type="dxa"/><w:jc w:val="center"/><w:tblLayout w:type="fixed"/>'
+        '<w:tblBorders>'
+        '<w:top w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+        '<w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+        '<w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+        '<w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+        '<w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+        '<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+        '</w:tblBorders>'
+        '<w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="0" w:type="dxa"/>'
+        '<w:bottom w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar>'
+        '</w:tblPr><w:tblGrid><w:gridCol w:w="8312"/></w:tblGrid>'
+        '<w:tr><w:tc><w:tcPr><w:tcW w:w="8312" w:type="dxa"/>'
+        '<w:shd w:val="clear" w:color="auto" w:fill="D9D9D9"/>'
+        '<w:tcMar><w:top w:w="100" w:type="dxa"/><w:left w:w="240" w:type="dxa"/>'
+        '<w:bottom w:w="100" w:type="dxa"/><w:right w:w="240" w:type="dxa"/></w:tcMar>'
+        '</w:tcPr>'
+        f"{paragraphs}"
+        '</w:tc></w:tr></w:tbl>'
+    )
+
+
+def normalize_code_match(text: str) -> str:
+    return re.sub(r"[\s{}]+", "", text)
+
+
+def style_code_blocks(body_xml: str, root: Path) -> str:
+    code_blocks = source_code_blocks(root)
+    if not code_blocks:
+        return body_xml
+    block_pattern = re.compile(r"<w:p\b.*?</w:p>|<w:tbl\b.*?</w:tbl>", re.S)
+    pieces: list[str] = []
+    pos = 0
+    for match in block_pattern.finditer(body_xml):
+        if match.start() > pos:
+            pieces.append(body_xml[pos:match.start()])
+        pieces.append(match.group(0))
+        pos = match.end()
+    if pos < len(body_xml):
+        pieces.append(body_xml[pos:])
+
+    scan = 0
+    for lines in code_blocks:
+        first_key = normalize_code_match(lines[0])
+        if not first_key:
+            continue
+        for index in range(scan, len(pieces)):
+            piece = pieces[index]
+            if not piece.startswith("<w:p"):
+                continue
+            if first_key in normalize_code_match(plain_paragraph_text(piece)):
+                pieces[index] = make_code_block_table(lines)
+                scan = index + 1
+                break
+    return "".join(pieces)
 
 
 def algorithm_border_xml(side: str) -> str:
@@ -939,6 +1037,7 @@ def algorithm_table_cell(
 
 
 def item_paragraph_for_algorithm_table(p_xml: str) -> str:
+    algorithm_size = "22"
     match = re.match(r"<w:p\b[^>]*>(.*)</w:p>", p_xml, re.S)
     inner = match.group(1) if match else p_xml
     inner = re.sub(r"<w:pPr\b.*?</w:pPr>", "", inner, count=1, flags=re.S)
@@ -947,45 +1046,52 @@ def item_paragraph_for_algorithm_table(p_xml: str) -> str:
         '<w:ind w:firstLine="0" w:firstLineChars="0" w:left="0" w:right="0"/>'
         '<w:jc w:val="left"/>'
         '<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" '
-        'w:eastAsia="宋体" w:cs="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>'
+        f'w:eastAsia="宋体" w:cs="Times New Roman"/><w:sz w:val="{algorithm_size}"/><w:szCs w:val="{algorithm_size}"/></w:rPr>'
         '</w:pPr>'
     )
     return f"<w:p>{ppr}{inner}</w:p>"
 
 
-def algorithm_number_paragraph(number: int) -> str:
+def algorithm_number_paragraph(label: str) -> str:
+    algorithm_size = "22"
     rpr = (
         '<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" '
-        'w:eastAsia="宋体" w:cs="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>'
+        f'w:eastAsia="宋体" w:cs="Times New Roman"/><w:sz w:val="{algorithm_size}"/><w:szCs w:val="{algorithm_size}"/></w:rPr>'
     )
     ppr = (
         '<w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/>'
         '<w:ind w:firstLine="0" w:firstLineChars="0" w:left="0" w:right="0"/>'
         '<w:jc w:val="right"/>'
         '<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" '
-        'w:eastAsia="宋体" w:cs="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>'
+        f'w:eastAsia="宋体" w:cs="Times New Roman"/><w:sz w:val="{algorithm_size}"/><w:szCs w:val="{algorithm_size}"/></w:rPr>'
         '</w:pPr>'
     )
-    return f"<w:p>{ppr}<w:r>{rpr}<w:t>{number}:</w:t></w:r></w:p>"
+    return f"<w:p>{ppr}<w:r>{rpr}<w:t>{escape(label)}</w:t></w:r></w:p>"
+
+
+def is_algorithm_preamble_item(p_xml: str) -> bool:
+    text = plain_paragraph_text(p_xml).replace(" ", "")
+    return text.startswith(("输入：", "输入:", "输出：", "输出:"))
 
 
 def make_algorithm_table(original_p: str, algorithm_number: str, title: str, item_blocks: list[str]) -> str:
+    algorithm_size = "22"
     bookmarks = "".join(re.findall(r"<w:bookmark(?:Start|End)\b[^>]*/>", original_p))
     label_rpr = (
         '<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" '
         'w:eastAsia="宋体" w:cs="Times New Roman"/><w:b/><w:bCs/>'
-        '<w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>'
+        f'<w:sz w:val="{algorithm_size}"/><w:szCs w:val="{algorithm_size}"/></w:rPr>'
     )
     title_rpr = (
         '<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" '
-        'w:eastAsia="宋体" w:cs="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>'
+        f'w:eastAsia="宋体" w:cs="Times New Roman"/><w:sz w:val="{algorithm_size}"/><w:szCs w:val="{algorithm_size}"/></w:rPr>'
     )
     header_ppr = (
         '<w:pPr><w:keepNext/><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/>'
         '<w:ind w:firstLine="0" w:firstLineChars="0" w:left="0" w:right="0"/>'
         '<w:jc w:val="left"/>'
         '<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" '
-        'w:eastAsia="宋体" w:cs="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>'
+        f'w:eastAsia="宋体" w:cs="Times New Roman"/><w:sz w:val="{algorithm_size}"/><w:szCs w:val="{algorithm_size}"/></w:rPr>'
         '</w:pPr>'
     )
     header_content = (
@@ -999,15 +1105,32 @@ def make_algorithm_table(original_p: str, algorithm_number: str, title: str, ite
         + algorithm_table_cell(header_content, width=8312, borders=algorithm_cell_border_xml(top=True, bottom=True), grid_span=2, left_margin=0, right_margin=0)
         + "</w:tr>"
     ]
-    for item_index, item in enumerate(item_blocks, start=1):
-        is_last = item_index == len(item_blocks)
+    step_number = 1
+    for item_index, item in enumerate(item_blocks):
+        is_last = item_index == len(item_blocks) - 1
         borders = algorithm_cell_border_xml(bottom=is_last)
-        rows.append(
-            "<w:tr>"
-            + algorithm_table_cell(algorithm_number_paragraph(item_index), width=360, borders=borders, left_margin=0, right_margin=18)
-            + algorithm_table_cell(item_paragraph_for_algorithm_table(item), width=7952, borders=borders, left_margin=0, right_margin=0)
-            + "</w:tr>"
-        )
+        if is_algorithm_preamble_item(item):
+            rows.append(
+                "<w:tr>"
+                + algorithm_table_cell(
+                    item_paragraph_for_algorithm_table(item),
+                    width=8312,
+                    borders=borders,
+                    grid_span=2,
+                    left_margin=0,
+                    right_margin=0,
+                )
+                + "</w:tr>"
+            )
+        else:
+            number_label = f"{step_number}:"
+            step_number += 1
+            rows.append(
+                "<w:tr>"
+                + algorithm_table_cell(algorithm_number_paragraph(number_label), width=430, borders=borders, left_margin=0, right_margin=18)
+                + algorithm_table_cell(item_paragraph_for_algorithm_table(item), width=7882, borders=borders, left_margin=0, right_margin=0)
+                + "</w:tr>"
+            )
     return (
         '<w:tbl><w:tblPr>'
         '<w:tblW w:w="8312" w:type="dxa"/><w:jc w:val="center"/><w:tblLayout w:type="fixed"/>'
@@ -1019,7 +1142,7 @@ def make_algorithm_table(original_p: str, algorithm_number: str, title: str, ite
         '<w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
         '<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
         '</w:tblBorders></w:tblPr>'
-        '<w:tblGrid><w:gridCol w:w="360"/><w:gridCol w:w="7952"/></w:tblGrid>'
+        '<w:tblGrid><w:gridCol w:w="430"/><w:gridCol w:w="7882"/></w:tblGrid>'
         + "".join(rows)
         + "</w:tbl>"
     )
@@ -1109,56 +1232,177 @@ def word_input_files(root: Path) -> list[Path]:
     return ordered
 
 
-def custom_list_item_counts(root: Path) -> list[int]:
-    counts: list[int] = []
+def find_balanced_latex_brace(text: str, open_brace: int) -> int:
+    depth = 0
+    escaped = False
+    for index in range(open_brace, len(text)):
+        char = text[index]
+        if escaped:
+            escaped = False
+            continue
+        if char == "\\":
+            escaped = True
+            continue
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return index
+    return -1
+
+
+def strip_latex_for_list_match(text: str) -> str:
+    text = re.sub(r"%.*", "", text)
+    # Pandoc converts inline math to OMML, so the plain Word paragraph text
+    # seen by this matcher no longer contains symbols such as $x$.
+    text = re.sub(r"\$[^$]*\$", "", text)
+    text = re.sub(r"\\[a-zA-Z]+\*?(?:\[[^\]]*\])?\{([^{}]*)\}", r"\1", text)
+    text = re.sub(r"\\[a-zA-Z]+\*?", "", text)
+    return text.replace("{", "").replace("}", "").strip()
+
+
+def list_match_key(text: str) -> str:
+    text = unescape(text)
+    text = re.sub(r"\s+", "", text)
+    text = re.sub(r"^[\(（]\d+[\)）]|^[①②③④⑤⑥⑦⑧⑨⑩]|^[A-Z]\s*", "", text)
+    return text[:12]
+
+
+def source_custom_list_specs(root: Path) -> list[dict[str, object]]:
+    specs: list[dict[str, object]] = []
     for path in word_input_files(root):
-        text = path.read_text(encoding="utf-8")
-        for match in re.finditer(r"\\begin\{list\}\{（\\arabic\{enumi\}）\}\{.*?\\end\{list\}", text, re.S):
-            counts.append(len(re.findall(r"\\item\b", match.group(0))))
-    return counts
+        text = strip_latex_comment_lines(path.read_text(encoding="utf-8"))
+        pos = 0
+        while True:
+            begin = text.find(r"\begin{list}", pos)
+            if begin < 0:
+                break
+            label_start = text.find("{", begin + len(r"\begin{list}"))
+            if label_start < 0:
+                break
+            label_end = find_balanced_latex_brace(text, label_start)
+            options_start = text.find("{", label_end + 1) if label_end >= 0 else -1
+            options_end = find_balanced_latex_brace(text, options_start) if options_start >= 0 else -1
+            end = text.find(r"\end{list}", options_end + 1) if options_end >= 0 else -1
+            if label_end < 0 or options_start < 0 or options_end < 0 or end < 0:
+                pos = begin + len(r"\begin{list}")
+                continue
+
+            label = text[label_start + 1 : label_end]
+            content = text[options_end + 1 : end]
+            if "circlednumber" in label or "textcircled" in label:
+                style = "circled"
+            elif r"\Alph" in label:
+                style = "alpha"
+            elif r"\arabic" in label:
+                style = "paren"
+            else:
+                pos = end + len(r"\end{list}")
+                continue
+
+            raw_items = re.split(r"\\item\b", content)[1:]
+            items = [strip_latex_for_list_match(item) for item in raw_items]
+            items = [item for item in items if item]
+            if items:
+                specs.append({"style": style, "items": items})
+            pos = end + len(r"\end{list}")
+    return specs
 
 
 def plain_paragraph_text(p_xml: str) -> str:
     return "".join(unescape(text) for text in re.findall(r"<w:t\b[^>]*>(.*?)</w:t>", p_xml, re.S)).strip()
 
 
-def add_static_list_number(p_xml: str, number: int) -> str:
+def add_static_list_label(p_xml: str, label: str) -> str:
     first_rpr = re.search(r"<w:rPr>.*?</w:rPr>", p_xml, re.S)
     rpr = first_rpr.group(0) if first_rpr else ""
-    prefix_run = f"<w:r>{rpr}<w:t>（{number}）</w:t></w:r>"
+    prefix_run = f"<w:r>{rpr}<w:t>{escape(label)}</w:t></w:r>"
     if "<w:pPr>" in p_xml:
         return re.sub(r"(</w:pPr>)", r"\1" + prefix_run, p_xml, count=1)
     return p_xml.replace(">", ">" + prefix_run, 1)
 
 
-def fix_custom_numbered_lists(body_xml: str, counts: list[int]) -> str:
-    if not counts:
+def custom_list_label(style: str, number: int) -> str:
+    if style == "circled":
+        if 1 <= number <= 20:
+            return chr(0x2460 + number - 1)
+        return str(number)
+    if style == "alpha":
+        return chr(ord("A") + number - 1)
+    return f"（{number}）"
+
+
+def is_pandoc_list_marker(text: str) -> bool:
+    compact = text.replace(" ", "")
+    return compact in {"", "（）", "()", "①", "A"}
+
+
+def fix_custom_numbered_lists(body_xml: str, specs: list[dict[str, object]]) -> str:
+    if not specs:
         return body_xml
     block_pattern = re.compile(r"<w:p\b.*?</w:p>|<w:tbl\b.*?</w:tbl>", re.S)
-    out: list[str] = []
+    blocks: list[str] = []
+    gaps: list[str] = []
     pos = 0
-    list_index = 0
-    remaining = 0
-    current_number = 1
 
     for match in block_pattern.finditer(body_xml):
-        out.append(body_xml[pos:match.start()])
-        block = match.group(0)
-        if block.startswith("<w:p"):
-            text = plain_paragraph_text(block)
-            if text == "（）" and list_index < len(counts):
-                remaining = counts[list_index]
-                current_number = 1
-                list_index += 1
-                pos = match.end()
-                continue
-            if remaining > 0 and text:
-                block = add_static_list_number(block, current_number)
-                remaining -= 1
-                current_number += 1
-        out.append(block)
+        gaps.append(body_xml[pos:match.start()])
+        blocks.append(match.group(0))
         pos = match.end()
-    out.append(body_xml[pos:])
+    gaps.append(body_xml[pos:])
+
+    removed: set[int] = set()
+    scan = 0
+    for spec in specs:
+        style = str(spec["style"])
+        items = [str(item) for item in spec["items"]]  # type: ignore[index]
+        if not items:
+            continue
+        key = list_match_key(items[0])
+        if not key:
+            continue
+        start_index: int | None = None
+        for index in range(scan, len(blocks)):
+            if index in removed or not blocks[index].startswith("<w:p"):
+                continue
+            if key in list_match_key(plain_paragraph_text(blocks[index])):
+                start_index = index
+                break
+        if start_index is None:
+            continue
+
+        marker_index = start_index - 1
+        if (
+            marker_index >= 0
+            and marker_index not in removed
+            and blocks[marker_index].startswith("<w:p")
+            and is_pandoc_list_marker(plain_paragraph_text(blocks[marker_index]))
+        ):
+            removed.add(marker_index)
+
+        item_index = start_index
+        for number, item in enumerate(items, start=1):
+            item_key = list_match_key(item)
+            while item_index < len(blocks):
+                if item_index not in removed and blocks[item_index].startswith("<w:p"):
+                    block_key = list_match_key(plain_paragraph_text(blocks[item_index]))
+                    if item_key and item_key in block_key:
+                        label = custom_list_label(style, number)
+                        text = plain_paragraph_text(blocks[item_index])
+                        if not text.strip().startswith(label):
+                            blocks[item_index] = add_static_list_label(blocks[item_index], label)
+                        item_index += 1
+                        break
+                item_index += 1
+        scan = item_index
+
+    out: list[str] = []
+    for index, block in enumerate(blocks):
+        out.append(gaps[index])
+        if index not in removed:
+            out.append(block)
+    out.append(gaps[-1])
     return "".join(out)
 
 
@@ -1689,12 +1933,12 @@ def merge_relationships(
     return ET.tostring(tpl, encoding="utf-8", xml_declaration=True), body_xml, copied
 
 
-def enable_update_fields(settings_xml: bytes) -> bytes:
+def disable_update_fields(settings_xml: bytes) -> bytes:
     text = settings_xml.decode("utf-8")
     if "<w:updateFields" in text:
-        text = re.sub(r"<w:updateFields\b[^/]*/>", '<w:updateFields w:val="true"/>', text)
+        text = re.sub(r"<w:updateFields\b[^/]*/>", '<w:updateFields w:val="false"/>', text)
     else:
-        text = text.replace("</w:settings>", '<w:updateFields w:val="true"/></w:settings>')
+        text = text.replace("</w:settings>", '<w:updateFields w:val="false"/></w:settings>')
     if "<w:autoHyphenation" in text:
         text = re.sub(r"<w:autoHyphenation\b[^/]*/>", '<w:autoHyphenation w:val="false"/>', text)
     else:
@@ -1740,8 +1984,9 @@ def build(template_path: Path, body_path: Path, output_path: Path, main_tex: Pat
         body_xml = body_fragment_without_final_sectpr(read_text(body_zip, "word/document.xml"))
         body_xml = demote_abstract_headings(body_xml)
         body_xml = insert_front_matter(body_xml, section_breaks)
-        body_xml = fix_custom_numbered_lists(body_xml, custom_list_item_counts(main_tex.parent))
+        body_xml = fix_custom_numbered_lists(body_xml, source_custom_list_specs(main_tex.parent))
         body_xml = fix_equation_numbering(body_xml, main_tex.parent)
+        body_xml = style_code_blocks(body_xml, main_tex.parent)
         body_xml = style_algorithms(body_xml, main_tex.parent)
         body_xml = style_document_images(body_xml, main_tex.parent)
         body_xml = arrange_cross_model_heatmap_figure(body_xml)
@@ -1756,7 +2001,7 @@ def build(template_path: Path, body_path: Path, output_path: Path, main_tex: Pat
             "[Content_Types].xml": merge_content_types(template_zip, body_zip),
             "word/document.xml": document_xml,
             "word/_rels/document.xml.rels": rels_xml,
-            "word/settings.xml": enable_update_fields(template_zip.read("word/settings.xml")),
+            "word/settings.xml": disable_update_fields(template_zip.read("word/settings.xml")),
         }
         for name in ("word/styles.xml", "word/numbering.xml"):
             if name in body_zip.namelist():

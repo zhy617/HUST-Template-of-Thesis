@@ -8,10 +8,9 @@
 \newlength{\originalparindent}
 \setlength{\originalparindent}{\parindent}
 
-% Keep table body close to the school Word sample: Songti 5 hao for Chinese
-% text and Times New Roman 5 hao for Latin text/numbers.
-\AtBeginEnvironment{table}{\zihao{-5}\songti}
-\AtBeginEnvironment{longtable}{\zihao{-5}\songti}
+% Keep table body at Wuhao (10.5 pt); it must not inherit body text size.
+\AtBeginEnvironment{table}{\zihao{5}\songti}
+\AtBeginEnvironment{longtable}{\zihao{5}\songti}
 
 % Scale only tables that would otherwise exceed the text width.
 \newsavebox{\fitwidetablebox}
@@ -67,3 +66,13 @@
 \newcommand{\rarr}{\rightarrow}
 \newcommand{\Rarr}{\Rightarrow}
 \DeclareMathOperator{\poly}{poly}
+
+\newfontfamily\HUSTCircleNumberFont{SimSun}
+\newcommand{\circlednumber}[1]{%
+  {\HUSTCircleNumberFont
+  \ifcase#1\relax
+  \or \symbol{"2460}\or \symbol{"2461}\or \symbol{"2462}\or \symbol{"2463}\or \symbol{"2464}%
+  \or \symbol{"2465}\or \symbol{"2466}\or \symbol{"2467}\or \symbol{"2468}\or \symbol{"2469}%
+  \else #1%
+  \fi}%
+}

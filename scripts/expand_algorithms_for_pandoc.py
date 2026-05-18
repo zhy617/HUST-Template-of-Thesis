@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -81,45 +83,112 @@ def strip_latex_caption(caption: str) -> str:
     return caption.replace("{", "").replace("}", "").strip()
 
 
-def expand_algorithm_block(block: str, number: str) -> str:
+def sanitize_filename(value: str) -> str:
+    value = re.sub(r"[^0-9A-Za-z._-]+", "_", value).strip("_")
+    return value or "algorithm"
+
+
+def tex_path(path: Path) -> str:
+    return path.as_posix().replace("\\", "/")
+
+
+def require_command(name: str) -> None:
+    if shutil.which(name) is None:
+        raise RuntimeError(f"Required command '{name}' was not found in PATH.")
+
+
+def make_algorithm_image_tex(block: str, number: str) -> str:
+    block = re.sub(r"\\begin\{algorithm\}(?:\[[^\]]*\])?", r"\\begin{algorithm}[H]", block, count=1)
+    block = re.sub(r"\\label\{[^}]+\}", "", block)
+    return rf"""\documentclass[UTF8]{{ctexart}}
+\usepackage{{amsmath,amssymb,bm}}
+\usepackage{{float}}
+\usepackage{{caption}}
+\usepackage{{setspace}}
+\usepackage{{etoolbox}}
+\usepackage{{algorithm}}
+\usepackage{{algorithmicx}}
+\usepackage[noEnd=false,indLines=false]{{algpseudocodex}}
+\usepackage[active,tightpage]{{preview}}
+\setlength\PreviewBorder{{0pt}}
+\pagestyle{{empty}}
+\floatstyle{{ruled}}
+\restylefloat{{algorithm}}
+\floatname{{algorithm}}{{算法}}
+\DeclareCaptionFont{{hustalgorithm}}{{\zihao{{5}}}}
+\captionsetup[algorithm]{{font=hustalgorithm,labelfont=bf,labelsep=space,justification=raggedright,singlelinecheck=false,position=top,skip={{0pt}}}}
+\renewcommand{{\algorithmicrequire}}{{\textbf{{输入：}}}}
+\renewcommand{{\algorithmicensure}}{{\textbf{{输出：}}}}
+\algrenewcommand\algorithmicindent{{1.5em}}
+\algrenewcommand\alglinenumber[1]{{\zihao{{5}}#1:}}
+\AtBeginEnvironment{{algorithm}}{{\zihao{{5}}}}
+\AtBeginEnvironment{{algorithmic}}{{\vspace{{1pt}}\zihao{{5}}\setstretch{{1.0}}}}
+\AtEndEnvironment{{algorithmic}}{{\vspace{{1pt}}}}
+\begin{{document}}
+\begin{{preview}}
+\begin{{minipage}}{{400pt}}
+\renewcommand{{\thealgorithm}}{{{number}}}
+{block}
+\end{{minipage}}
+\end{{preview}}
+\end{{document}}
+"""
+
+
+def render_algorithm_image(root: Path, block: str, number: str, label: str | None, build_dir: Path) -> Path:
+    require_command("xelatex")
+    require_command("pdftoppm")
+    image_dir = build_dir / "algorithm-images"
+    image_dir.mkdir(parents=True, exist_ok=True)
+    stem = sanitize_filename(label or f"algorithm-{number}")
+    tex_file = image_dir / f"{stem}.tex"
+    pdf_file = image_dir / f"{stem}.pdf"
+    out_prefix = image_dir / f"{stem}-page"
+    png_from_pdftoppm = image_dir / f"{stem}-page-1.png"
+    png_file = image_dir / f"{stem}.png"
+
+    tex_file.write_text(make_algorithm_image_tex(block, number), encoding="utf-8", newline="\n")
+    subprocess.run(
+        ["xelatex", "-interaction=nonstopmode", "-halt-on-error", tex_file.name],
+        cwd=image_dir,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    subprocess.run(
+        ["pdftoppm", "-png", "-r", "300", pdf_file.name, out_prefix.name],
+        cwd=image_dir,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    if png_file.exists():
+        png_file.unlink()
+    png_from_pdftoppm.replace(png_file)
+    return png_file.relative_to(root)
+
+
+def expand_algorithm_block(block: str, number: str, root: Path, build_dir: Path) -> str:
     caption = command_argument(block, r"\caption") or "算法"
     label = command_argument(block, r"\label")
     caption_text = strip_latex_caption(caption)
-    alg_match = re.search(r"\\begin\{algorithmic\}(?:\[[^\]]+\])?(.*?)\\end\{algorithmic\}", block, re.S)
-    if not alg_match:
-        return block
-
-    states: list[str] = []
-    pending: list[str] = []
-    for raw_line in alg_match.group(1).splitlines():
-        line = raw_line.strip()
-        if not line:
-            continue
-        state = re.match(r"\\State\b\s*(.*)", line)
-        if state:
-            if pending:
-                states.append(" ".join(pending).strip())
-            pending = [state.group(1).strip()]
-        elif pending:
-            pending.append(line)
-    if pending:
-        states.append(" ".join(pending).strip())
-    if not states:
-        return block
-
-    label_tex = f"\\label{{{label}}}" if label else ""
-    items = "\n".join(f"\\item {state}" for state in states)
+    image_path = render_algorithm_image(root, block, number, label, build_dir)
+    alt_text = f"算法 {number} {caption_text}"
     return (
         "\n\\begin{center}\n"
-        f"\\textbf{{算法 {number} {caption_text}}}{label_tex}\n"
-        "\\end{center}\n\n"
-        "\\begin{enumerate}\n"
-        f"{items}\n"
-        "\\end{enumerate}\n"
+        f"\\includegraphics[width=1.0\\textwidth]{{{tex_path(image_path)}}}\n"
+        "\\end{center}\n"
+        f"% {alt_text}\n"
     )
 
 
-def expand_algorithms(text: str) -> str:
+def expand_algorithms(text: str, root: Path, build_dir: Path) -> str:
     out: list[str] = []
     pos = 0
     chapter = 0
@@ -149,7 +218,7 @@ def expand_algorithms(text: str) -> str:
         algorithm_count += 1
         number = f"{chapter}-{algorithm_count}" if chapter > 0 else str(algorithm_count)
         out.append(text[pos : match.start()])
-        out.append(expand_algorithm_block(block, number))
+        out.append(expand_algorithm_block(block, number, root, build_dir))
         pos = block_end
 
     return "".join(out)
@@ -168,8 +237,9 @@ def main() -> int:
     if not output_path.is_absolute():
         output_path = root / output_path
 
+    build_dir = root / ".docx-build"
     flat = strip_latex_comment_lines(flatten_inputs(input_path, root))
-    expanded = expand_algorithms(flat)
+    expanded = expand_algorithms(flat, root, build_dir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(expanded, encoding="utf-8", newline="\n")
     return 0
