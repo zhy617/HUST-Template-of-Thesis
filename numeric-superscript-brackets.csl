@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<style xmlns="http://purl.org/net/xbiblio/csl" version="1.0" class="in-text" default-locale="en-US">
+  <info>
+    <title>Numeric Superscript Brackets</title>
+    <id>https://example.invalid/numeric-superscript-brackets</id>
+    <link href="https://example.invalid/numeric-superscript-brackets" rel="self"/>
+    <author>
+      <name>Local thesis conversion</name>
+    </author>
+    <category citation-format="numeric"/>
+    <category field="engineering"/>
+    <updated>2026-05-18T00:00:00+00:00</updated>
+  </info>
+
+  <macro name="author">
+    <names variable="author">
+      <name initialize-with=". " delimiter=", " and="text"/>
+      <substitute>
+        <names variable="editor"/>
+        <text variable="title"/>
+      </substitute>
+    </names>
+  </macro>
+
+  <macro name="issued-year">
+    <date variable="issued">
+      <date-part name="year"/>
+    </date>
+  </macro>
+
+  <macro name="title">
+    <choose>
+      <if type="article-journal article-magazine article-newspaper paper-conference" match="any">
+        <text variable="title" quotes="true"/>
+      </if>
+      <else>
+        <text variable="title" font-style="italic"/>
+      </else>
+    </choose>
+  </macro>
+
+  <macro name="container">
+    <choose>
+      <if variable="container-title">
+        <text variable="container-title" font-style="italic"/>
+      </if>
+      <else-if variable="publisher">
+        <text variable="publisher"/>
+      </else-if>
+    </choose>
+  </macro>
+
+  <citation collapse="citation-number">
+    <sort>
+      <key variable="citation-number"/>
+    </sort>
+    <layout delimiter=",">
+      <group prefix="[" suffix="]" vertical-align="sup">
+        <text variable="citation-number"/>
+      </group>
+    </layout>
+  </citation>
+
+  <bibliography entry-spacing="0" line-spacing="1">
+    <layout suffix=".">
+      <text variable="citation-number" prefix="[" suffix="]"/>
+      <text macro="author" prefix=" "/>
+      <text macro="issued-year" prefix=". "/>
+      <text macro="title" prefix=". "/>
+      <text macro="container" prefix=". "/>
+      <group prefix=", ">
+        <text variable="volume"/>
+        <text variable="issue" prefix="(" suffix=")"/>
+      </group>
+      <text variable="page" prefix=", "/>
+    </layout>
+  </bibliography>
+</style>

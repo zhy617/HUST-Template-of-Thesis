@@ -1,0 +1,29 @@
+% Pandoc-only macro shims for converting the thesis to DOCX.
+% This file is not used by XeLaTeX.
+
+\newcommand{\abstractch}{}
+\newcommand{\abstracten}{}
+\newcommand{\keywordsch}{\textbf{关键词：}}
+\newcommand{\keywordsen}{\textbf{Keywords: }}
+\newcommand{\acknowledgement}{\section*{致  谢}}
+\newcommand{\references}{}
+
+\newcommand{\fitwidetable}[1]{#1}
+\newcommand{\subfigure}[2][]{#2}
+
+\newcommand{\figref}[1]{图~\ref{#1}}
+\newcommand{\tabref}[1]{表~\ref{#1}}
+\newcommand{\algref}[1]{算法~\ref{#1}}
+\newcommand{\eqnref}[1]{式~\ref{#1}}
+
+\newcommand{\Sufficiency}{\noindent\textit{充分性.\ \ }}
+\newcommand{\Necessity}{\noindent\textit{必要性.\ \ }}
+\newcommand{\Prob}[1]{\textsc{#1}}
+\newcommand{\Cls}[1]{\textsf{#1}}
+\newcommand{\e}{\mathrm{e}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\rarr}{\rightarrow}
+\newcommand{\Rarr}{\Rightarrow}
+\newcommand{\poly}{\mathrm{poly}}
+\newcommand{\bm}[1]{\boldsymbol{#1}}

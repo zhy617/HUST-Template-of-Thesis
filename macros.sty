@@ -1,21 +1,58 @@
-% 供参考，可删
+% Generic helper macros for the HUST undergraduate thesis template.
+% Project-specific symbols should be added below in your own thesis branch.
 
-% === Bridge-VLM 论文特定符号 ===
-\newcommand{\bridgescore}{B^{(l,e)}}
-\newcommand{\affinity}{A^{(l,e)}}
-\newcommand{\deltaimg}{\Delta_{\mathrm{img}}^{(l,e)}}
-\newcommand{\deltatxt}{\Delta_{\mathrm{txt}}^{(l,e)}}
-\newcommand{\tauB}{\tau_{B}}
-\newcommand{\tauZ}{\tau_{z}}
-\newcommand{\modelM}{\mathcal{M}}
-\newcommand{\modelMp}{\mathcal{M}'}
-\DeclareMathOperator*{\topk}{top\text{-}k}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{etoolbox}
+
+\newlength{\originalparindent}
+\setlength{\originalparindent}{\parindent}
+
+% Keep table body close to the school Word sample: Songti 5 hao for Chinese
+% text and Times New Roman 5 hao for Latin text/numbers.
+\AtBeginEnvironment{table}{\zihao{-5}\songti}
+\AtBeginEnvironment{longtable}{\zihao{-5}\songti}
+
+% Scale only tables that would otherwise exceed the text width.
+\newsavebox{\fitwidetablebox}
+\newcommand{\fitwidetable}[1]{%
+  \sbox{\fitwidetablebox}{#1}%
+  \ifdim\wd\fitwidetablebox>\textwidth
+    \resizebox{\textwidth}{!}{#1}%
+  \else
+    #1%
+  \fi
+}
+
+% Bibliography lines should not break inside English words. Existing hyphens
+% remain valid break points.
+\newcommand{\HUST@bibnohyphen}{%
+  \hyphenpenalty=10000%
+  \exhyphenpenalty=10000%
+  \tolerance=2000%
+  \emergencystretch=2em%
+}
+\makeatletter
+\@ifundefined{AtBeginBibliography}{}{\AtBeginBibliography{\HUST@bibnohyphen}}
+\@ifundefined{AtEveryBibitem}{}{\AtEveryBibitem{\HUST@bibnohyphen}}
+\makeatother
 
 %==================== 引用 ====================%
 \newcommand{\sectionid}{}
 \newcommand{\mlbl}[1]{\label{\sectionid-#1}}
 \newcommand{\mref}[2][\sectionid]{\autoref{#1-#2}}
 
+\makeatletter
+\newcommand{\HUST@refglue}{\CJKecglue}
+\providecommand{\figref}[1]{}
+\providecommand{\tabref}[1]{}
+\providecommand{\algref}[1]{}
+\providecommand{\eqnref}[1]{}
+\renewcommand{\figref}[1]{图\CJKecglue\ref{#1}\HUST@refglue}
+\renewcommand{\tabref}[1]{表\CJKecglue\ref{#1}\HUST@refglue}
+\renewcommand{\algref}[1]{算法\CJKecglue\ref{#1}\HUST@refglue}
+\renewcommand{\eqnref}[1]{式\CJKecglue\ref{#1}\HUST@refglue}
+\makeatother
 
 %==================== 数学 ====================%
 \newcommand{\Sufficiency}{\noindent\textit{充分性.\ \ }}
@@ -30,15 +67,3 @@
 \newcommand{\rarr}{\rightarrow}
 \newcommand{\Rarr}{\Rightarrow}
 \DeclareMathOperator{\poly}{poly}
-
-\usepackage{amsmath,amssymb}    % AMSLaTeX宏包 用来排出更加漂亮的公式
-\makeatletter
-\renewcommand\normalsize{%
- \abovedisplayskip 1\p@ \@plus1\p@ \@minus6\p@
- \abovedisplayshortskip \z@ \@plus3\p@
- \belowdisplayshortskip 3\p@ \@plus3\p@ \@minus3\p@
- \belowdisplayskip \abovedisplayskip
- \let\@listi\@listI}
-\makeatother
-
-

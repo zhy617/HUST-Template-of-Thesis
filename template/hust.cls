@@ -24,7 +24,7 @@
 
 \LoadClass[a4paper]{article}
 \RequirePackage[AutoFakeBold=2,AutoFakeSlant=true]{xeCJK}
-\RequirePackage[zihao=-4,UTF8,heading=true]{ctex}
+\RequirePackage[zihao=-4,UTF8,heading=true,fontset=none]{ctex}
 \RequirePackage{template/packages}
 
 
@@ -101,11 +101,34 @@
 
 
 %====================== 字体 ======================%
-\setCJKmainfont[
-    BoldFont={FandolHei},
-    ItalicFont={FandolKai}
-]{FandolSong}
-\setmainfont{Times New Roman}
+\IfFontExistsTF{SimSun}{
+    \setCJKmainfont[
+        BoldFont={SimHei},
+        ItalicFont={KaiTi}
+    ]{SimSun}
+    \setCJKsansfont{SimHei}
+    \setCJKmonofont{FangSong}
+    \setCJKfamilyfont{zhsong}{SimSun}
+    \setCJKfamilyfont{zhhei}{SimHei}
+    \setCJKfamilyfont{zhkai}{KaiTi}
+    \setCJKfamilyfont{zhfs}{FangSong}
+}{
+    \setCJKmainfont[
+        BoldFont={FandolHei-Regular},
+        ItalicFont={FandolKai-Regular}
+    ]{FandolSong-Regular}
+    \setCJKsansfont{FandolHei-Regular}
+    \setCJKmonofont{FandolFang-Regular}
+    \setCJKfamilyfont{zhsong}{FandolSong-Regular}
+    \setCJKfamilyfont{zhhei}{FandolHei-Regular}
+    \setCJKfamilyfont{zhkai}{FandolKai-Regular}
+    \setCJKfamilyfont{zhfs}{FandolFang-Regular}
+}
+\IfFontExistsTF{Times New Roman}{\setmainfont{Times New Roman}}{\setmainfont{TeX Gyre Termes}}
+\providecommand{\songti}{\CJKfamily{zhsong}}
+\providecommand{\heiti}{\CJKfamily{zhhei}}
+\providecommand{\kaishu}{\CJKfamily{zhkai}}
+\providecommand{\fangsong}{\CJKfamily{zhfs}}
 
 
 %==================== 标题格式 ====================%
@@ -151,6 +174,10 @@
 \captionsetup{font=hust}
 \captionsetup[figure]{position=bottom,skip={6pt}}
 \captionsetup[table]{position=top,skip={0pt}}
+\setlength{\belowcaptionskip}{0pt}
+\setlength{\intextsep}{0pt plus 2pt}
+\AtBeginEnvironment{table}{\vspace{0.5\baselineskip}}
+\AtBeginEnvironment{algorithm}{\vspace{0.5\baselineskip}}
 \renewcommand{\figurename}{图}
 \renewcommand{\tablename}{表}
 
@@ -274,9 +301,19 @@
 \newcommand*{\circled}[1]{\lower.7ex\hbox{\tikz\draw (0pt, 0pt)%
     circle (.45em) node {\makebox[1em][c]{\small #1}};}}
 \robustify{\circled}
+\newlength{\HGP@enumlabelwidth}
+\settowidth{\HGP@enumlabelwidth}{(9)}
+\newlength{\HGP@enumlabelsep}
+\setlength{\HGP@enumlabelsep}{0.5em}
 
 \setenumerate[1]{
     label=(\arabic*),
+    align=left,
+    labelwidth=\HGP@enumlabelwidth,
+    labelsep=\HGP@enumlabelsep,
+    leftmargin=0pt,
+    itemindent=\dimexpr\parindent+\HGP@enumlabelwidth+\HGP@enumlabelsep\relax,
+    listparindent=\parindent,
     itemsep=0pt,
     partopsep=0pt,
     parsep=0pt,
@@ -284,6 +321,8 @@
 }
 \setenumerate[2]{
     label=\circled{\arabic*},
+    labelindent=\parindent,
+    leftmargin=*,
     itemsep=0pt,
     partopsep=0pt,
     parsep=0pt,
@@ -291,6 +330,8 @@
 }
 \setenumerate[3]{
     label=\Alph*.,
+    labelindent=\parindent,
+    leftmargin=*,
     itemsep=0pt,
     partopsep=0pt,
     parsep=0pt,
@@ -298,12 +339,16 @@
 }
 \setitemize{
     label=\textbullet,
+    labelindent=\parindent,
+    leftmargin=*,
     itemsep=0pt,
     partopsep=0pt,
     parsep=0pt,
     topsep=0pt
 }
 \setdescription{
+    labelindent=\parindent,
+    leftmargin=*,
     itemsep=0pt,
     partopsep=0pt,
     parsep=0pt,
@@ -312,19 +357,15 @@
 
 
 %==================== 代码格式 ====================%
-\newminted{cpp}{
+\DefineVerbatimEnvironment{cppcode}{Verbatim}{
     frame=lines,
     framesep=4pt,
-    mathescape=true,
-    fontsize=\footnotesize,
-    style=perldoc
+    fontsize=\footnotesize
 }
-\newminted{python}{
+\DefineVerbatimEnvironment{pythoncode}{Verbatim}{
     frame=lines,
     framesep=4pt,
-    mathescape=true,
-    fontsize=\footnotesize,
-    style=perldoc
+    fontsize=\footnotesize
 }
 
 %================== tikz & plots ==================%
@@ -386,9 +427,10 @@
 
 %==================== 上标引用 ====================%
 \let\normalcite\cite
-\renewcommand{\cite}[2][]{\unskip\textsuperscript{~\ifthenelse
-    {\isempty{#1}}{\normalcite{#2}}{\normalcite[#1]{#2}}
-\unskip}\unskip}
+\DeclareRobustCommand{\cite}[2][]{%
+    \unskip\textsuperscript{~\ifblank{#1}{\normalcite{#2}}{\normalcite[#1]{#2}}}%
+    \unskip%
+}
 
 %==================== 图片引用 ====================%
 \newcommand{\cfig}[3]{
@@ -415,8 +457,13 @@
 \hbadness=10000
 
 \usepackage[]{titlesec}
-%\titlespacing*{\subsection}{6pt}{1.2ex plus .0ex minus .0ex}{.3ex plus .0ex}
-%\titlespacing*{\subsubsection}{6pt}{1.2ex plus .0ex minus .0ex}{.3ex plus .0ex}
+\setcounter{secnumdepth}{4}
+\newlength{\HGP@subtitleskip}
+\setlength{\HGP@subtitleskip}{0.25\baselineskip}
+\titlespacing{\subsection}{0pt}{\HGP@subtitleskip}{\HGP@subtitleskip}
+\titlespacing{\subsubsection}{0pt}{\HGP@subtitleskip}{\HGP@subtitleskip}
+\titleformat{\paragraph}[hang]{\bfseries\zihao{-4}}{\theparagraph}{1em}{}
+\titlespacing{\paragraph}{0pt}{\HGP@subtitleskip}{\HGP@subtitleskip}
 
 \usepackage{geometry}
 \geometry{footskip = 15pt,textwidth = 400pt,headsep = 0pt}

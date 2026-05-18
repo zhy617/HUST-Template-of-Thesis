@@ -1,4 +1,81 @@
-\section{面向XXX的YYY算法}
+\section{方法设计与转换测试单元}
+本章集中放置符号表、图片、算法和自定义编号列表。所有元素都在正文中进行交叉引用，便于检查Word中引用文字是否显示为“表x-y”“图x-y”“算法x-y”和“式x-y”。
+
+\subsection{问题定义与符号说明}
+给定一个包含MoE层的视觉语言模型$\mathcal{M}$，专家压缩的目标是在保留任务性能的前提下降低每层专家数量。设压缩保留比例为$r=M/N$，压缩过程可表述为\eqnref{eq:compression_objective}。
+\begin{equation}
+    \label{eq:compression_objective}
+    \mathcal{M}' = \arg\min_{\mathcal{M}'} \; \mathbb{E}_{x \sim \mathcal{D}} \left[ \mathcal{L}(\mathcal{M}', x) \right], \quad \text{s.t.} \; |\mathcal{E}_l'| = M, \; \forall l \in \{1, \dots, L\}
+\end{equation}
+
+为便于后续描述，\tabref{chart:symbols}列出了本章使用的主要符号及其含义。该表用于检查两列表格中数学符号、中文说明和列宽自适应效果。
+
+\begin{table}[!ht]
+    \centering
+    \caption{主要符号说明}
+    \label{chart:symbols}
+    \begin{tabular}{cl}
+    \toprule
+        符号 & 含义 \\ \midrule
+        $\mathcal{M}$ & 原始MoE视觉语言模型 \\
+        $\mathcal{M}'$ & 压缩后的模型 \\
+        $L$ & MoE层总数 \\
+        $N$ & 每层原始专家数量 \\
+        $M$ & 每层压缩后保留的专家数量 \\
+        $r$ & 压缩保留比例，$r=M/N$ \\
+        $B^{(l,e)}$ & 第$l$层第$e$个专家的桥接分数 \\
+        $A^{(l,e)}$ & 第$l$层第$e$个专家的模态亲和度 \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{桥接分数计算流程}
+桥接分数用于估计专家对图文对应关系的敏感程度。参考DeepSeek-VL2等MoE视觉语言模型的输入组织方式\cite{wu2024deepseekvl2}，测试样例将一次校准样本拆分为四路前向输入：
+
+\begin{list}{（\arabic{enumi}）}{
+  \setlength{\leftmargin}{0pt}
+  \setlength{\labelsep}{0pt}
+  \setlength{\itemindent}{\dimexpr\parindent+\labelwidth\relax}
+  \setlength{\itemsep}{\parskip}
+  \setlength{\parsep}{0pt}
+  \setlength{\topsep}{0pt}
+  \setlength{\partopsep}{0pt}
+  \usecounter{enumi}
+}
+\setlength{\parindent}{\originalparindent}
+    \item 原始输入$x$：同时包含匹配的图像和文本信息；
+    \item 图像扰动输入$\tilde{x}_{\mathrm{vis}}$：替换图像，文本保持不变；
+    \item 文本扰动输入$\tilde{x}_{\mathrm{txt}}$：替换问题文本，图像保持不变；
+    \item 图文错配输入$\tilde{x}_{\mathrm{mis}}$：保留问题文本，但替换为另一张图像。
+\end{list}
+
+\figref{fig:merge_constraint_flow}展示了专家合并约束的流程图。该图片来自源论文图件，用于检查PNG图片尺寸、居中、图题编号和正文引用。
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.70\textwidth]{images/expert_merge_flow.png}
+    \caption{专家合并场景下的可容许性约束流程}
+    \label{fig:merge_constraint_flow}
+\end{figure}
+
+\subsection{算法测试}
+\algref{al:admissibility_merge}给出合并场景下的简化伪代码。该算法用于检查algorithm环境在DOCX中是否转换为带标题行、步骤编号和表格边框的样式。
+
+\begin{algorithm}[ht]
+    \caption{可容许性约束合并}\label{al:admissibility_merge}
+    \begin{algorithmic}[1]
+        \State \textbf{输入：}第$l$层专家集合$\mathcal{E}_l$，基础聚类分组$\{\mathcal{G}_1,\dots,\mathcal{G}_K\}$，桥接专家集合$\mathcal{B}_l$
+        \State \textbf{输出：}修正后的合并分组$\{\mathcal{G}_1',\dots,\mathcal{G}_K'\}$
+        \State 初始化$\mathcal{G}_k' \gets \mathcal{G}_k$，其中$k=1,\dots,K$
+        \State 对每个合并组$\mathcal{G}_k'$，计算组内桥接专家集合$\mathcal{B}_k \gets \mathcal{G}_k' \cap \mathcal{B}_l$
+        \State 若$\mathcal{B}_k$中少于两个桥接专家，则保留当前分组
+        \State 若存在互补冲突，则选择桥接分数较低的专家作为重分配对象
+        \State 在其他合并组中寻找不会产生新冲突的目标组
+        \State 若目标组存在，则将该专家重分配到目标组
+        \State 若目标组不存在，则保留基础聚类结果
+        \State 返回$\{\mathcal{G}_1',\dots,\mathcal{G}_K'\}$
+    \end{algorithmic}
+\end{algorithm}
 
 \subsection{本章小结}
-
+本章提供了数学公式、符号表、自定义编号列表、图片和算法环境测试。转换后应重点检查\eqnref{eq:compression_objective}、\tabref{chart:symbols}、\figref{fig:merge_constraint_flow}和\algref{al:admissibility_merge}的编号与样式。

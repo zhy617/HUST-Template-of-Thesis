@@ -5,6 +5,49 @@
 
 ## 使用方法
 
+### 导出 Word（DOCX）
+
+仓库内置了从 LaTeX 到 Word 的导出流程，入口是：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\convert_to_docx.ps1
+```
+
+默认会读取 `main.tex` 中的封面信息、读取 `word.tex` 作为 Pandoc 转换入口，并生成 `main.docx`。需要指定输出文件时：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\convert_to_docx.ps1 -Output thesis.docx
+```
+
+依赖项：
+
+1. `pandoc`：负责 LaTeX 到 DOCX 的基础转换。
+2. `python`：负责后处理封面、目录、公式编号、图表题注、交叉引用、三线表、算法和参考文献格式。
+3. Microsoft Word：负责更新目录和域代码，并填充封面占位符。
+4. Poppler 的 `pdftoppm`：可选，用于把 `images/*.pdf` 自动转为 DOCX 更稳定的 PNG 回退图；没有安装时也能继续导出，但建议给 PDF 图片准备同名 PNG/SVG。
+
+写作时优先维护 `main.tex` 和 `body/` 下的正文。`word.tex` 是 DOCX 导出专用入口，默认按“摘要、英文摘要、正文、参考文献、致谢”的顺序组织内容；如果你新增章节，需要同时在 `main.tex` 和 `word.tex` 中加入对应 `\include` 或 `\input`。
+
+DOCX 流程已处理的常见格式问题包括：
+
+1. 复用 `hust-template.docx` 的封面、原创性声明、页眉页脚和正文样式。
+2. 摘要和目录使用罗马页码，正文从第 1 页重新编号。
+3. 目录只显示一级和二级标题。
+4. 图、表、公式、算法、参考文献引用去除蓝色下划线，并使用论文中的编号。
+5. 表格按 Word 三线表输出，顶线和底线较粗，中间线较细；表内中文使用宋体，英文和数字使用 Times New Roman。
+6. 独立公式居中并带右侧编号，段内公式在公式框内部补空格，避免与正文贴得太近。
+7. 参考文献引用显示为黑色上标方括号编号。
+
+如果某个复杂表格的自适应列宽仍不理想，可以在仓库根目录新建 `docx-table-widths.json`，按 LaTeX 表格标签覆盖列宽比例：
+
+```json
+{
+  "chart:example": [1600, 2400, 2900, 1412]
+}
+```
+
+脚本会把这些数值按比例缩放到学校模板正文宽度内，因此不会让表格超出页面。
+
 ### VS Code
 
 #### 即开即用版

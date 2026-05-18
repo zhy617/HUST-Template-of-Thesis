@@ -11,5 +11,10 @@
 *.synctex.gz
 *.synctex(busy)
 *.pdf
+*.docx.tmp
+~$*.docx
+main.docx
+.docx-build/
+scripts/__pycache__/
 
 .vscode/

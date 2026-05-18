@@ -1,17 +1,36 @@
 \section{相关技术基础}
-第二章可以进行项目方案论证或进行具体背景知识的概述，说明设计原理并进行方案选择，阐明为什么要选择这个设计方案，
-包括各种方案的分析、比较，以及所采用方案的特点
+本章用于测试正文中的公式、参考文献、表格标题和表格交叉引用。样例内容参考本科论文中的MoE视觉语言模型压缩场景，但只保留最小可检查单元。
 
-本章名字可变，名字最后可结合自己的课题内容，如果毕业设计是一个大项目的一个模块，本章可以介绍整体项目结构以及相关背景知识，
-如果毕业设计是科学研讨型，第二章，第三章都可以介绍理论背景知识。
-（除总结那一章以外，每章都加一段引言）
+\subsection{混合专家模型}
+混合专家模型（Mixture of Experts，MoE）通过门控网络为每个输入token选择少量专家，从而在扩大总参数量的同时控制单次推理计算量。早期稀疏门控MoE证明了条件计算在大规模神经网络中的可扩展性\cite{shazeer2017outrageously}，Switch Transformer进一步简化了路由策略\cite{fedus2022switch}。
 
-\subsection{每章至少 3 个小节}
-\subsection{每章至少 3 个小节}
+设第$l$层包含$N$个专家，门控网络给出的权重为$g_i^{(l)}(\bm{x})$，专家输出为$E_i^{(l)}(\bm{x})$，则MoE层输出可写为\eqnref{eq:test_moe_output}。
+\begin{equation}
+    \label{eq:test_moe_output}
+    y^{(l)}(\bm{x}) = \sum_{i=1}^{N} g_i^{(l)}(\bm{x}) E_i^{(l)}(\bm{x})
+\end{equation}
+
+\subsection{专家合并与剪枝}
+MoE压缩通常分为专家合并和专家剪枝两类。专家合并将多个功能相近的专家融合为一个新专家，专家剪枝则直接删除重要性较低的专家。HC-SMoE、MC-SMoE和REAP分别代表了层次聚类合并、路由感知合并和一次性专家剪枝三类思路\cite{chi2022hcsmoe,li2024mcsmoe,chen2024reap}。
+
+\tabref{chart:merge_comparison}给出三种方法的简化对比。该表用于检查三线表、较长文本列、表题编号和表内英文连字符的Word转换效果。
+
+\begin{table}[!ht]
+    \centering
+    \caption{三种MoE专家压缩方法对比}
+    \label{chart:merge_comparison}
+    \fitwidetable{%
+    \begin{tabular}{lccc}
+    \toprule
+        方法 & 聚类或排序依据 & 压缩策略 & 是否需要校准数据 \\ \midrule
+        HC-SMoE & 输出响应距离 & 等权平均 & 是 \\
+        MergeMoE & 输出L2距离 & 等权平均 & 是 \\
+        MC-SMoE & 输出距离+路由频率 & 频率加权平均+低秩补偿 & 是 \\
+        REAP & 门控权重+激活范数 & 删除低重要性专家 & 是 \\
+    \bottomrule
+    \end{tabular}%
+    }
+\end{table}
 
 \subsection{本章小结}
-第二章到倒数第二章每章都必须要有一个小结，用于阐述本章干了什么，篇幅不用太长，要与本章最开始的引言相呼应，
-除小结外，每章至少有3个小节
-
-
-
+本章提供了公式、引用和普通数据表测试。后续章节继续放置图片、算法、多列表格和多子图，用于检查DOCX导出后的综合排版效果。
